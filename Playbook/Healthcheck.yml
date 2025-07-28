@@ -1,44 +1,49 @@
-- name: Generar reporte en pantalla de FortiGate
-  hosts: FORTI1
+- name: Generar reporte en pantalla (vía raw) de FortiGate
+  hosts: FORTI1                  # o tu grupo/inventario de FortiGate
   gather_facts: no
   vars:
     fecha: "{{ lookup('pipe', 'date +%Y-%m-%d') }}"
   tasks:
-    - name: Obtener estado del sistema
-      ansible.netcommon.cli_command:
-        command: get system status
+
+    - name: Obtener SYSTEM STATUS
+      raw: get system status
       register: system_status
 
-    - name: Obtener rendimiento del sistema
-      ansible.netcommon.cli_command:
-        command: get system performance status
+    - name: Obtener PERFORMANCE STATUS
+      raw: get system performance status
       register: performance_status
 
-    - name: Obtener estado de sesiones
-      ansible.netcommon.cli_command:
-        command: get system session status
+    - name: Obtener SESSION STATUS
+      raw: get system session status
       register: session_status
 
-    - name: Obtener estado del hardware
-      ansible.netcommon.cli_command:
-        command: get hardware status
+    - name: Obtener HARDWARE STATUS
+      raw: get hardware status
       register: hardware_status
 
-    - name: Mostrar reporte formateado en pantalla
+    # ════════════════════════════════════════════════════════════════
+    # Reporte legible en pantalla
+    # ════════════════════════════════════════════════════════════════
+    - name: Mostrar reporte formateado
       ansible.builtin.debug:
         msg: |
-          === REPORTE SEMANAL DE FORTIGATE ===
-          Fecha: {{ fecha }}
-          Host: {{ inventory_hostname }}
+          ══════════════════════════════════════════════════════
+          ▸ REPORTE SEMANAL FORTIGATE
+          ▸ Fecha : {{ fecha }}
+          ▸ Equipo: {{ inventory_hostname }}
+          ══════════════════════════════════════════════════════
 
-          === SYSTEM STATUS ===
+          ▶ SYSTEM STATUS
           {{ system_status.stdout }}
 
-          === PERFORMANCE STATUS ===
+          ▶ PERFORMANCE STATUS
           {{ performance_status.stdout }}
 
-          === SESSION STATUS ===
+          ▶ SESSION STATUS
           {{ session_status.stdout }}
 
-          === HARDWARE STATUS ===
+          ▶ HARDWARE STATUS
           {{ hardware_status.stdout }}
+
+          ══════════════════════════════════════════════════════
+
