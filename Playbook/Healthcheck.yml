@@ -1,4 +1,4 @@
-- name: Generar reporte en pantalla (vía raw) de FortiGate
+- name: Generar reporte en pantalla desde FortiGate (solo comandos del KB)
   hosts: FORTI1
   gather_facts: no
   vars:
@@ -20,6 +20,22 @@
     - name: Obtener HARDWARE STATUS
       raw: get hardware status
       register: hardware_status
+
+    - name: Obtener INTERFACE STATUS
+      raw: get system interface
+      register: interface_status
+
+    - name: Obtener USO DE MEMORIA
+      raw: diag hardware sysinfo memory
+      register: memory_status
+
+    - name: Obtener MEMORIA SHARED
+      raw: diag hard sysinfo shm
+      register: shared_memory
+
+    - name: Obtener CRASHLOGS
+      raw: diag debug crashlog read
+      register: crashlog
 
     - name: Mostrar reporte formateado y legible
       debug:
@@ -46,6 +62,21 @@
           {% for line in hardware_status.stdout_lines %}{{ line }}
           {% endfor %}
 
-          ══════════════════════════════════════════════════════
+          ▶ INTERFACE STATUS
+          {% for line in interface_status.stdout_lines %}{{ line }}
+          {% endfor %}
 
+          ▶ USO DE MEMORIA
+          {% for line in memory_status.stdout_lines %}{{ line }}
+          {% endfor %}
+
+          ▶ MEMORIA COMPARTIDA
+          {% for line in shared_memory.stdout_lines %}{{ line }}
+          {% endfor %}
+
+          ▶ CRASHLOGS
+          {% for line in crashlog.stdout_lines %}{{ line }}
+          {% endfor %}
+
+          ══════════════════════════════════════════════════════
 
