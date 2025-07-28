@@ -1,5 +1,5 @@
 - name: Generar reporte en pantalla (vía raw) de FortiGate
-  hosts: FORTI1                  # o tu grupo/inventario de FortiGate
+  hosts: FORTI1
   gather_facts: no
   vars:
     fecha: "{{ lookup('pipe', 'date +%Y-%m-%d') }}"
@@ -21,11 +21,8 @@
       raw: get hardware status
       register: hardware_status
 
-    # ════════════════════════════════════════════════════════════════
-    # Reporte legible en pantalla
-    # ════════════════════════════════════════════════════════════════
-    - name: Mostrar reporte formateado
-      ansible.builtin.debug:
+    - name: Mostrar reporte formateado y legible
+      debug:
         msg: |
           ══════════════════════════════════════════════════════
           ▸ REPORTE SEMANAL FORTIGATE
@@ -34,16 +31,21 @@
           ══════════════════════════════════════════════════════
 
           ▶ SYSTEM STATUS
-          {{ system_status.stdout }}
+          {% for line in system_status.stdout_lines %}{{ line }}
+          {% endfor %}
 
           ▶ PERFORMANCE STATUS
-          {{ performance_status.stdout }}
+          {% for line in performance_status.stdout_lines %}{{ line }}
+          {% endfor %}
 
           ▶ SESSION STATUS
-          {{ session_status.stdout }}
+          {% for line in session_status.stdout_lines %}{{ line }}
+          {% endfor %}
 
           ▶ HARDWARE STATUS
-          {{ hardware_status.stdout }}
+          {% for line in hardware_status.stdout_lines %}{{ line }}
+          {% endfor %}
 
           ══════════════════════════════════════════════════════
+
 
