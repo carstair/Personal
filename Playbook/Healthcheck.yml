@@ -1,5 +1,5 @@
 - name: Generar reporte en pantalla de FortiGate
-  hosts: all
+  hosts: FORTI1
   gather_facts: no
   vars:
     fecha: "{{ lookup('pipe', 'date +%Y-%m-%d') }}"
