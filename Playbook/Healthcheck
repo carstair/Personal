@@ -1,0 +1,44 @@
+- name: Generar reporte en pantalla de FortiGate
+  hosts: all
+  gather_facts: no
+  vars:
+    fecha: "{{ lookup('pipe', 'date +%Y-%m-%d') }}"
+  tasks:
+    - name: Obtener estado del sistema
+      ansible.netcommon.cli_command:
+        command: get system status
+      register: system_status
+
+    - name: Obtener rendimiento del sistema
+      ansible.netcommon.cli_command:
+        command: get system performance status
+      register: performance_status
+
+    - name: Obtener estado de sesiones
+      ansible.netcommon.cli_command:
+        command: get system session status
+      register: session_status
+
+    - name: Obtener estado del hardware
+      ansible.netcommon.cli_command:
+        command: get hardware status
+      register: hardware_status
+
+    - name: Mostrar reporte formateado en pantalla
+      ansible.builtin.debug:
+        msg: |
+          === REPORTE SEMANAL DE FORTIGATE ===
+          Fecha: {{ fecha }}
+          Host: {{ inventory_hostname }}
+
+          === SYSTEM STATUS ===
+          {{ system_status.stdout }}
+
+          === PERFORMANCE STATUS ===
+          {{ performance_status.stdout }}
+
+          === SESSION STATUS ===
+          {{ session_status.stdout }}
+
+          === HARDWARE STATUS ===
+          {{ hardware_status.stdout }}
