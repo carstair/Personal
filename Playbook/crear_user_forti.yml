@@ -1,0 +1,21 @@
+- name: Crear un usuario administrador en FortiGate
+  hosts: FORTI1
+  gather_facts: no
+
+
+  tasks:
+    - name: Crear administrador en FortiGate
+      raw: |
+        config system admin
+        edit "{{ admin_username }}"
+        set password "{{ password_username }}"
+        set accprofile "super_admin"
+        set vdom "root"
+        set force-password-change enable
+        next
+        end
+      register: admin_creation
+
+    - name: Mostrar resultado
+      debug:
+        var: admin_creation.stdout_lines
