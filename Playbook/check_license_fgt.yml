@@ -5,7 +5,7 @@
     url: "https://{{ fgt_host }}/api/v2/monitor/license/status"
     method: GET
     headers:
-      Authorization: "Bearer {{ FGT_TOKEN }}"
+      Authorization: "Bearer {{ fgt_token }}"
     validate_certs: false
     return_content: yes
   register: license_response
