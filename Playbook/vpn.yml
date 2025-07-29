@@ -1,16 +1,6 @@
 - name: Crear VPN IPsec Site-to-Site en FortiGate
   hosts: FORTI1
   gather_facts: no
-  vars:
-    vpn_name: ""
-    local_interface: ""
-    usar_multiples_phase2: ""
-    tipo_gw_remoto: ""
-    remote_gw: ""
-    preshared_key: ""
-    phase2_name: ""
-    local_subnets: ""
-    remote_subnets: ""
 
   pre_tasks:
     - name: Validar que la cantidad de subredes coincida
