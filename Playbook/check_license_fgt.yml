@@ -1,0 +1,20 @@
+# check_license_fgt.yml
+
+- name: Obtener información de licencias desde FortiGate {{ fgt_host }}
+  uri:
+    url: "https://{{ fgt_host }}/api/v2/monitor/license/status"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ FGT_TOKEN }}"
+    validate_certs: no
+    return_content: yes
+  register: license_response
+
+- name: Mostrar datos de licencias para {{ fgt_host }}
+  debug:
+    var: license_response.json
+
+- name: Guardar en archivo local
+  copy:
+    content: "{{ license_response.content }}"
+    dest: "./fortigate_license_{{ fgt_host }}.json"
