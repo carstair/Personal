@@ -2,6 +2,8 @@
 - name: Verificar licencias y actualizaciones en FortiGates
   hosts: localhost
   gather_facts: false
+  vars:
+    fgt_token: "{{ lookup('env', 'FGT_TOKEN') }}"
   tasks:
 
     - name: Ejecutar revisión por cada FortiGate
