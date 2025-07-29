@@ -1,20 +1,48 @@
 # check_license_fgt.yml
 
-- name: Obtener información de licencias desde FortiGate {{ fgt_host }}
+- name: Consultar estado de licencias
   uri:
     url: "https://{{ fgt_host }}/api/v2/monitor/license/status"
     method: GET
     headers:
       Authorization: "Bearer {{ FGT_TOKEN }}"
-    validate_certs: no
+    validate_certs: false
     return_content: yes
   register: license_response
 
-- name: Mostrar datos de licencias para {{ fgt_host }}
+- name: Mostrar resumen detallado de licencias y actualizaciones
   debug:
-    var: license_response.json
+    msg: |
+      ========= LICENCIAS FORTIGATE - {{ fgt_host }} =========
+      Hostname:                     {{ license_response.json.hostname | default('N/A') }}
+      Serial:                       {{ license_response.json.serial | default('N/A') }}
+      Estado del dispositivo:       {{ license_response.json.status | default('N/A') }}
+      Tipo de licencia:             {{ license_response.json.license_type | default('N/A') }}
+      Fecha de expiración general:  {{ (license_response.json.expiry | int) | strftime('%Y-%m-%d') if license_response.json.expiry is defined else 'N/A' }}
 
-- name: Guardar en archivo local
-  copy:
-    content: "{{ license_response.content }}"
-    dest: "./fortigate_license_{{ fgt_host }}.json"
+      === Servicios y Bases de Datos ===
+      FortiGuard:
+        Estado:                     {{ license_response.json.fortiguard_info.service_status | default('N/A') }}
+        Última actualización:       {{ (license_response.json.fortiguard_info.last_update | int) | strftime('%Y-%m-%d') if license_response.json.fortiguard_info.last_update is defined else 'N/A' }}
+        Expira:                     {{ (license_response.json.fortiguard_info.expiry | int) | strftime('%Y-%m-%d') if license_response.json.fortiguard_info.expiry is defined else 'N/A' }}
+
+      Antivirus:
+        Estado:                     {{ license_response.json.av_info.service_status | default('N/A') }}
+        Última actualización:       {{ (license_response.json.av_info.last_update | int) | strftime('%Y-%m-%d') if license_response.json.av_info.last_update is defined else 'N/A' }}
+        Expira:                     {{ (license_response.json.av_info.expiry | int) | strftime('%Y-%m-%d') if license_response.json.av_info.expiry is defined else 'N/A' }}
+
+      IPS:
+        Estado:                     {{ license_response.json.ips_info.service_status | default('N/A') }}
+        Última actualización:       {{ (license_response.json.ips_info.last_update | int) | strftime('%Y-%m-%d') if license_response.json.ips_info.last_update is defined else 'N/A' }}
+        Expira:                     {{ (license_response.json.ips_info.expiry | int) | strftime('%Y-%m-%d') if license_response.json.ips_info.expiry is defined else 'N/A' }}
+
+      Web Filtering:
+        Estado:                     {{ license_response.json.webfilter_info.service_status | default('N/A') }}
+        Última actualización:       {{ (license_response.json.webfilter_info.last_update | int) | strftime('%Y-%m-%d') if license_response.json.webfilter_info.last_update is defined else 'N/A' }}
+        Expira:                     {{ (license_response.json.webfilter_info.expiry | int) | strftime('%Y-%m-%d') if license_response.json.webfilter_info.expiry is defined else 'N/A' }}
+
+      Application Control:
+        Estado:                     {{ license_response.json.app_ctrl_info.service_status | default('N/A') }}
+        Última actualización:       {{ (license_response.json.app_ctrl_info.last_update | int) | strftime('%Y-%m-%d') if license_response.json.app_ctrl_info.last_update is defined else 'N/A' }}
+        Expira:                     {{ (license_response.json.app_ctrl_info.expiry | int) | strftime('%Y-%m-%d') if license_response.json.app_ctrl_info.expiry is defined else 'N/A' }}
+      ================================================================
