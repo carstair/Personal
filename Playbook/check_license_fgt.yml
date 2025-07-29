@@ -2,7 +2,7 @@
 
 - name: Consultar estado de licencias
   uri:
-    url: "https://{{ fgt_host }}/api/v2/monitor/license/status"
+    url: "https://{{ hostvars[fgt_host].ansible_host | default(fgt_host) }}/api/v2/monitor/license/status"
     method: GET
     headers:
       Authorization: "Bearer {{ fgt_token }}"
