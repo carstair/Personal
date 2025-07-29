@@ -1,0 +1,88 @@
+- name: Crear VPN IPsec Site-to-Site en FortiGate
+  hosts: FORTI1
+  gather_facts: no
+
+  pre_tasks:
+    - name: Validar que la cantidad de subredes coincida
+      fail:
+        msg: "La cantidad de subredes locales y remotas no coincide."
+      when: >
+        usar_multiples_phase2 | lower == 'yes' and
+        (local_subnets.split(',') | length) != (remote_subnets.split(',') | length)
+
+  tasks:
+    - name: Crear IPsec Phase 1
+      raw: |
+        config vpn ipsec phase1-interface
+        edit "{{ vpn_name }}"
+        set interface "{{ local_interface }}"
+        set ike-version 1
+        set peertype any
+        set net-device disable
+        set proposal aes256-sha256
+        set dhgrp 14
+        {% if tipo_gw_remoto | lower == 'ddns' %}
+        set type ddns
+        set remotegw-ddns "{{ remote_gw }}"
+        {% else %}
+        set remote-gw "{{ remote_gw }}"
+        {% endif %}
+        set psksecret "{{ preshared_key }}"
+        set dpd on-idle
+        set npu-offload enable
+        set add-route disable
+        set keepalive 0
+        set rekey-time 28800
+        next
+        end
+
+    - name: Crear una sola Phase 2
+      when: usar_multiples_phase2 | lower != 'yes'
+      raw: |
+        config vpn ipsec phase2-interface
+        edit "{{ phase2_name }}"
+        set phase1name "{{ vpn_name }}"
+        set src-subnet {{ local_subnets }}
+        set dst-subnet {{ remote_subnets }}
+        set proposal aes256-sha256
+        set pfs disable
+        set keylifeseconds 28800
+        next
+        end
+
+    - name: Crear múltiples Phase 2
+      when: usar_multiples_phase2 | lower == 'yes'
+      vars:
+        local_list: "{{ local_subnets.split(',') }}"
+        remote_list: "{{ remote_subnets.split(',') }}"
+      loop: "{{ range(0, (local_list | length) | int) | list }}"
+      loop_control:
+        index_var: idx
+      raw: |
+        config vpn ipsec phase2-interface
+        edit "{{ phase2_name }}-{{ idx }}"
+        set phase1name "{{ vpn_name }}"
+        set src-subnet {{ local_list[idx] | trim }}
+        set dst-subnet {{ remote_list[idx] | trim }}
+        set proposal aes256-sha256
+        set pfs disable
+        set keylifeseconds 28800
+        next
+        end
+
+    - name: Verificar configuración de Phase 1
+      raw: "show vpn ipsec phase1-interface {{ vpn_name }}"
+
+    - name: Verificar configuración de Phase 2 (una sola)
+      when: usar_multiples_phase2 | lower != 'yes'
+      raw: "show vpn ipsec phase2-interface {{ phase2_name }}"
+
+    - name: Verificar configuración de Phase 2 (múltiples)
+      when: usar_multiples_phase2 | lower == 'yes'
+      vars:
+        count: "{{ local_subnets.split(',') | length }}"
+      loop: "{{ range(0, count | int) | list }}"
+      loop_control:
+        index_var: idx
+      raw: |
+        show vpn ipsec phase2-interface "{{ phase2_name }}-{{ idx }}"
