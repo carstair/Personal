@@ -9,7 +9,7 @@
 
     - name: Definir lista de FortiGates desde el grupo de inventario
       set_fact:
-        fgt_list: "{{ groups['FORTI1'] }}"
+        fgt_list: "{{ groups['Inventario Forti'] }}"
 
     - name: Ejecutar revisión en cada FortiGate
       loop: "{{ fgt_list }}"
