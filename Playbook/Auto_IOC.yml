@@ -1,0 +1,70 @@
+- name: Procesar IoC desde correo
+  hosts: localhost
+  gather_facts: no
+  collections:
+    - ansible.windows
+  tasks:
+    - name: Ejecutar script de extracción
+      command: python3 leer_correo2.py
+      register: correo_procesado
+      changed_when: false
+
+    - name: Extraer JSON válido de la salida
+      set_fact:
+        ioc_data: "{{ correo_procesado.stdout_lines | select('match', '^\\{.*\\}$') | list | first | from_json }}"
+      when: correo_procesado.stdout_lines | select('match', '^\\{.*\\}$') | list | first is defined
+
+    - name: Mostrar error si existe
+      debug:
+        msg: "Error: {{ ioc_data.message }}"
+      when: ioc_data.status == 'error'
+
+- name: Escribir IoC en host Windows remoto
+  hosts: Win
+  gather_facts: no
+  collections:
+    - ansible.windows
+    - community.windows
+  vars:
+    archivo: "Prueba_Ansible.txt"
+    ruta_base: "C:\\IoC\\Prueba_Ansible"
+
+  tasks:
+    - name: Asegurar archivo existe
+      win_file:
+        path: "{{ ruta_base }}\\{{ hostvars['localhost'].ioc_data.Empresa }}\\{{ archivo }}"
+        state: touch
+      when:
+        - hostvars['localhost'].ioc_data.status == 'success'
+
+    - name: Escribir IoC al final del archivo
+      community.windows.win_lineinfile:
+        path: "{{ ruta_base }}\\{{ hostvars['localhost'].ioc_data.Empresa }}\\{{ archivo }}"
+        line: "{{ hostvars['localhost'].ioc_data.IOC }}  # {{ hostvars['localhost'].ioc_data.Ticket }}"
+        create: yes
+        insertafter: EOF
+      when:
+        - hostvars['localhost'].ioc_data.status == 'success'
+        - hostvars['localhost'].ioc_data.IOC != 'NO_IOC'
+
+    - name: Ejecutar script de respuesta
+      command: python3 responder_correo.py
+      args:
+        stdin: "{{ hostvars['localhost'].ioc_data | to_json }}"
+      register: respuesta_correo
+      changed_when: false
+
+    - name: Extraer JSON válido de respuesta
+      set_fact:
+        respuesta_data: "{{ respuesta_correo.stdout_lines | select('match', '^\\{.*\\}$') | list | first | from_json }}"
+      when: respuesta_correo.stdout_lines | select('match', '^\\{.*\\}$') | list | first is defined
+
+    - name: Mostrar error si el envío falló
+      debug:
+        msg: "Error al enviar correo: {{ respuesta_data.message }}"
+      when: respuesta_data.status == 'error'
+
+    - name: Mostrar resultado si fue exitoso
+      debug:
+        var: respuesta_data
+      when: respuesta_data.status == 'success'
